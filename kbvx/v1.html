@@ -1,0 +1,502 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>KBV1 BLE Controller</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: #071018;
+      --panel: #0d1a24;
+      --panel-2: #102331;
+      --text: #e7f2ff;
+      --muted: #91a8bd;
+      --accent: #4cc9f0;
+      --accent-2: #70e000;
+      --danger: #ff4d6d;
+      --border: rgba(255,255,255,0.12);
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background:
+        radial-gradient(circle at top, rgba(76, 201, 240, 0.12), transparent 30%),
+        radial-gradient(circle at 80% 20%, rgba(112, 224, 0, 0.08), transparent 25%),
+        var(--bg);
+      color: var(--text);
+      display: grid;
+      place-items: center;
+      padding: 24px;
+    }
+    .app {
+      width: min(960px, 100%);
+      display: grid;
+      gap: 16px;
+    }
+    .hero, .card {
+      background: linear-gradient(180deg, rgba(255,255,255,0.05), rgba(255,255,255,0.02));
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      backdrop-filter: blur(12px);
+      box-shadow: 0 18px 48px rgba(0, 0, 0, 0.35);
+    }
+    .hero {
+      padding: 22px 24px;
+    }
+    .hero h1 {
+      margin: 0 0 8px;
+      font-size: clamp(24px, 4vw, 40px);
+      letter-spacing: 0.02em;
+    }
+    .hero p {
+      margin: 0;
+      color: var(--muted);
+      line-height: 1.6;
+    }
+    .grid {
+      display: grid;
+      gap: 16px;
+      grid-template-columns: 1.2fr 0.8fr;
+    }
+    .card {
+      padding: 18px;
+    }
+    .label {
+      display: block;
+      font-size: 12px;
+      color: var(--muted);
+      margin-bottom: 8px;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+    }
+    input, textarea, button {
+      font: inherit;
+    }
+    input, textarea {
+      width: 100%;
+      background: rgba(4, 12, 18, 0.75);
+      color: var(--text);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 14px 16px;
+      outline: none;
+    }
+    input:focus, textarea:focus {
+      border-color: rgba(76, 201, 240, 0.6);
+      box-shadow: 0 0 0 3px rgba(76, 201, 240, 0.12);
+    }
+    textarea {
+      min-height: 150px;
+      resize: vertical;
+      line-height: 1.5;
+    }
+    .row {
+      display: grid;
+      gap: 12px;
+    }
+    .actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+    button {
+      cursor: pointer;
+      border: 0;
+      border-radius: 999px;
+      padding: 12px 16px;
+      font-weight: 700;
+      color: #08131b;
+      background: linear-gradient(135deg, var(--accent), #90dbf4);
+      transition: transform 0.15s ease, opacity 0.15s ease;
+    }
+    button:hover { transform: translateY(-1px); }
+    button:active { transform: translateY(1px); }
+    button.secondary {
+      background: linear-gradient(135deg, #b0b7c3, #e2e8f0);
+    }
+    button.success {
+      background: linear-gradient(135deg, var(--accent-2), #b5e48c);
+    }
+    button.danger {
+      color: white;
+      background: linear-gradient(135deg, var(--danger), #ff8fab);
+    }
+    .status {
+      display: grid;
+      gap: 10px;
+      align-content: start;
+    }
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      width: fit-content;
+      border-radius: 999px;
+      padding: 8px 12px;
+      background: rgba(255,255,255,0.06);
+      border: 1px solid var(--border);
+      color: var(--muted);
+      font-size: 13px;
+    }
+    .dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: var(--danger);
+      box-shadow: 0 0 0 4px rgba(255, 77, 109, 0.18);
+    }
+    .dot.ok {
+      background: var(--accent-2);
+      box-shadow: 0 0 0 4px rgba(112, 224, 0, 0.16);
+    }
+    .dot.warn {
+      background: var(--accent);
+      box-shadow: 0 0 0 4px rgba(76, 201, 240, 0.16);
+    }
+    .small {
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.55;
+    }
+    pre {
+      margin: 0;
+      padding: 14px;
+      border-radius: 14px;
+      background: rgba(4, 12, 18, 0.75);
+      border: 1px solid var(--border);
+      color: #d4e7ff;
+      min-height: 120px;
+      overflow: auto;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+    .kv {
+      display: grid;
+      grid-template-columns: 120px 1fr;
+      gap: 8px 12px;
+      align-items: center;
+      font-size: 14px;
+    }
+    .kv div:nth-child(odd) { color: var(--muted); }
+    .footer-note {
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.5;
+    }
+    @media (max-width: 760px) {
+      .grid { grid-template-columns: 1fr; }
+      .kv { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <main class="app">
+    <section class="hero">
+      <h1>KBV1 BLE Controller</h1>
+    </section>
+
+    <section class="grid">
+      <section class="card">
+        <span class="label">接続</span>
+        <div class="actions" style="margin-bottom:14px;">
+          <button id="connectBtn">KBV1 に接続</button>
+          <button id="disconnectBtn" class="secondary" disabled>切断</button>
+        </div>
+
+        <form class="row" id="strokeForm" autocomplete="on">
+          <div>
+            <span class="label">ユーザー名</span>
+            <input
+              id="usernameInput"
+              name="username"
+              type="text"
+              autocomplete="username"
+              spellcheck="false"
+              autocapitalize="off"
+              autocorrect="off"
+              inputmode="text"
+              placeholder="KBV1"
+              value="KBV1"
+            >
+          </div>
+          <div>
+            <span class="label">キーストローク</span>
+            <input
+              id="strokeInput"
+              name="password"
+              type="password"
+              autocomplete="current-password"
+              spellcheck="false"
+              autocapitalize="off"
+              autocorrect="off"
+              inputmode="text"
+              placeholder="例: ABC{ENTER}{DELAY:500}{LEFT_CTRL:P}X{LEFT_CTRL:R}"
+              value="ABC{ENTER}"
+            >
+          </div>
+          <div class="actions">
+            <button id="writeBtn" class="success" type="submit" disabled>設定を書き込む</button>
+            <button id="clearBtn" class="danger" type="button" disabled>空にする</button>
+          </div>
+          <div>
+            <div class="actions">
+            </div>
+          </div>
+        </form>
+      </section>
+
+      <aside class="card status">
+        <span class="label">状態</span>
+        <div class="pill"><span id="statusDot" class="dot"></span><span id="statusText">未接続</span></div>
+        <div class="kv">
+          <div>Device</div><div id="deviceName">-</div>
+          <div>Service</div><div>4d8f1b1c-9a44-4a1c-a7d4-8c6c0f1b0001</div>
+          <div>Stroke</div><div>4d8f1b1c-9a44-4a1c-a7d4-8c6c0f1b0002</div>
+        </div>
+        <div class="small">状態は LED で見るにゃ。ここは書き込み専用にしたにゃ。</div>
+      </aside>
+    </section>
+
+    <section class="card">
+      <span class="label">ログ</span>
+      <pre id="log"></pre>
+    </section>
+
+    <section class="footer-note">
+      補足: AtomS3 側の広告名は <strong>KBV1</strong> にしてあるにゃ。ブラウザの保存 UI は実装差があるにゃ。
+    </section>
+  </main>
+
+  <script>
+    const SERVICE_UUID = '4d8f1b1c-9a44-4a1c-a7d4-8c6c0f1b0001';
+    const STROKE_UUID = '4d8f1b1c-9a44-4a1c-a7d4-8c6c0f1b0002';
+
+    const connectBtn = document.getElementById('connectBtn');
+    const disconnectBtn = document.getElementById('disconnectBtn');
+    const writeBtn = document.getElementById('writeBtn');
+    const clearBtn = document.getElementById('clearBtn');
+    const strokeForm = document.getElementById('strokeForm');
+    const usernameInput = document.getElementById('usernameInput');
+    const strokeInput = document.getElementById('strokeInput');
+    const statusDot = document.getElementById('statusDot');
+    const statusText = document.getElementById('statusText');
+    const deviceName = document.getElementById('deviceName');
+    const logEl = document.getElementById('log');
+
+    let device = null;
+    let server = null;
+    let strokeCharacteristic = null;
+    let gattOperationInProgress = false;
+
+    function getSavedDeviceIdFromHash() {
+      const hash = location.hash.startsWith('#') ? location.hash.slice(1) : location.hash;
+      const params = new URLSearchParams(hash);
+      return params.get('deviceId');
+    }
+
+    function setSavedDeviceIdToHash(deviceId) {
+      const params = new URLSearchParams(location.hash.startsWith('#') ? location.hash.slice(1) : location.hash);
+
+      if (deviceId) {
+        params.set('deviceId', deviceId);
+      } else {
+        params.delete('deviceId');
+      }
+
+      const nextHash = params.toString();
+      const nextUrl = `${location.pathname}${location.search}${nextHash ? `#${nextHash}` : ''}`;
+      history.replaceState(null, '', nextUrl);
+    }
+
+    function log(message) {
+      const time = new Date().toLocaleTimeString();
+      logEl.textContent = `[${time}] ${message}\n` + logEl.textContent;
+    }
+
+    function setConnectionState(kind, text) {
+      statusText.textContent = text;
+      statusDot.className = 'dot';
+      if (kind === 'ok') statusDot.classList.add('ok');
+      if (kind === 'warn') statusDot.classList.add('warn');
+    }
+
+    function setButtonsConnected(connected) {
+      disconnectBtn.disabled = !connected;
+      writeBtn.disabled = !connected;
+      clearBtn.disabled = !connected;
+      connectBtn.disabled = connected;
+    }
+
+    async function runGattOperation(operation) {
+      if (gattOperationInProgress) {
+        return false;
+      }
+
+      gattOperationInProgress = true;
+
+      try {
+        await operation();
+        return true;
+      } finally {
+        gattOperationInProgress = false;
+      }
+    }
+
+    async function connect() {
+      if (!navigator.bluetooth) {
+        log('Web Bluetooth が使えないにゃ。Chrome / Edge / Android Chrome で開いてみてにゃ。');
+        return;
+      }
+
+      try {
+        log('KBV1 を検索中...');
+        device = await navigator.bluetooth.requestDevice({
+          filters: [{ name: 'KBV1' }],
+          optionalServices: [SERVICE_UUID]
+        });
+
+        device.addEventListener('gattserverdisconnected', onDisconnected);
+        deviceName.textContent = device.name || '(no name)';
+        setSavedDeviceIdToHash(device.id);
+
+        log('接続中...');
+        server = await device.gatt.connect();
+        const service = await server.getPrimaryService(SERVICE_UUID);
+        strokeCharacteristic = await service.getCharacteristic(STROKE_UUID);
+
+        setConnectionState('ok', '接続済み');
+        setButtonsConnected(true);
+        log('接続完了');
+      } catch (error) {
+        log(`接続失敗: ${error}`);
+        setConnectionState('warn', '接続失敗');
+        setButtonsConnected(false);
+      }
+    }
+
+    function onDisconnected() {
+      log('BLE 切断');
+      setConnectionState('warn', '切断');
+      setButtonsConnected(false);
+      deviceName.textContent = device?.name || '-';
+    }
+
+    async function reconnectSavedDevice() {
+      if (!navigator.bluetooth?.getDevices) {
+        return;
+      }
+
+      const savedDeviceId = getSavedDeviceIdFromHash();
+      if (!savedDeviceId) {
+        return;
+      }
+
+      try {
+        const devices = await navigator.bluetooth.getDevices();
+        const savedDevice = devices.find((candidate) => candidate.id === savedDeviceId);
+
+        if (!savedDevice) {
+          return;
+        }
+
+        device = savedDevice;
+        device.addEventListener('gattserverdisconnected', onDisconnected);
+        deviceName.textContent = device.name || '(no name)';
+
+        if (device.gatt.connected) {
+          const service = await device.gatt.getPrimaryService(SERVICE_UUID);
+          strokeCharacteristic = await service.getCharacteristic(STROKE_UUID);
+        } else {
+          log('保存済みデバイスを再接続中...');
+          server = await device.gatt.connect();
+          const service = await server.getPrimaryService(SERVICE_UUID);
+          strokeCharacteristic = await service.getCharacteristic(STROKE_UUID);
+        }
+
+        setConnectionState('ok', '接続済み');
+        setButtonsConnected(true);
+        log('保存済みデバイスに再接続したにゃ');
+      } catch (error) {
+        log(`保存済みデバイスの再接続失敗: ${error}`);
+        setConnectionState('warn', '未接続');
+        setButtonsConnected(false);
+      }
+    }
+
+    async function writeStroke(value) {
+      if (!strokeCharacteristic) return;
+
+      await runGattOperation(async () => {
+        const payload = new TextEncoder().encode(value);
+        await strokeCharacteristic.writeValue(payload);
+        log(`stroke 書き込み: ${value || '(empty)'}`);
+      });
+    }
+
+    async function trySavePasswordCredential() {
+      if (!window.PasswordCredential || !navigator.credentials?.store) {
+        return;
+      }
+
+      try {
+        const credential = new PasswordCredential({
+          id: usernameInput.value.trim() || 'KBV1',
+          name: 'KBV1',
+          password: strokeInput.value,
+        });
+
+        await navigator.credentials.store(credential);
+      } catch (error) {
+        log(`保存UIの要求に失敗: ${error}`);
+      }
+    }
+
+    connectBtn.addEventListener('click', connect);
+
+    disconnectBtn.addEventListener('click', async () => {
+      try {
+        if (device?.gatt?.connected) {
+          device.gatt.disconnect();
+        }
+      } catch (error) {
+        log(`切断失敗: ${error}`);
+      }
+    });
+
+    strokeForm.addEventListener('submit', async (event) => {
+      event.preventDefault();
+
+      try {
+        await writeStroke(strokeInput.value);
+        await trySavePasswordCredential();
+      } catch (error) {
+        log(`書き込み失敗: ${error}`);
+      }
+    });
+
+    clearBtn.addEventListener('click', async () => {
+      try {
+        strokeInput.value = '';
+        await writeStroke('');
+      } catch (error) {
+        log(`空書き込み失敗: ${error}`);
+      }
+    });
+
+    document.querySelectorAll('.preset').forEach((button) => {
+      button.addEventListener('click', () => {
+        strokeInput.value = button.dataset.value || '';
+        log(`プリセット選択: ${strokeInput.value}`);
+      });
+    });
+
+    setConnectionState('warn', '未接続');
+    setButtonsConnected(false);
+    log('ページ読み込み完了');
+    reconnectSavedDevice();
+  </script>
+</body>
+</html>
