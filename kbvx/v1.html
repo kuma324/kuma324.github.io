@@ -431,8 +431,22 @@
 
       await runGattOperation(async () => {
         const payload = new TextEncoder().encode(value);
+        log(`stroke 書き込み開始: ${value || '(empty)'}`);
+
+        if (typeof strokeCharacteristic.writeValueWithResponse === 'function') {
+          await strokeCharacteristic.writeValueWithResponse(payload);
+          log(`stroke 書き込み完了(応答あり): ${value || '(empty)'}`);
+          return;
+        }
+
+        if (typeof strokeCharacteristic.writeValueWithoutResponse === 'function') {
+          await strokeCharacteristic.writeValueWithoutResponse(payload);
+          log(`stroke 書き込み完了(応答なし): ${value || '(empty)'}`);
+          return;
+        }
+
         await strokeCharacteristic.writeValue(payload);
-        log(`stroke 書き込み: ${value || '(empty)'}`);
+        log(`stroke 書き込み完了: ${value || '(empty)'}`);
       });
     }
 
